@@ -28,6 +28,8 @@
 // Process structure
 struct process {
     pid_t pid;
+    uid_t uid;      // User ID
+    gid_t gid;      // Group ID
     char name[32];
     struct process* parent;
     struct process* next;

@@ -901,6 +901,7 @@ int tty_close(struct device* dev) {
 }
 
 int tty_read(struct device* dev, void* buffer, size_t size) {
+    (void)size;  // Suppress unused parameter warning
     if (!dev || dev->type != DEV_TTY || !buffer) return -1;
     
     // For now, just read from keyboard
@@ -1021,6 +1022,7 @@ int fd_alloc(struct process* proc) {
 }
 
 void fd_free(struct process* proc, int fd) {
+    (void)proc;  // Suppress unused parameter warning
     if (fd < 0 || fd >= MAX_FDS) return;
     
     struct file_descriptor* fd_entry = fd_table[fd];
@@ -1034,6 +1036,7 @@ void fd_free(struct process* proc, int fd) {
 }
 
 struct file_descriptor* fd_get(struct process* proc, int fd) {
+    (void)proc;  // Suppress unused parameter warning
     if (fd < 0 || fd >= MAX_FDS) return 0;
     return fd_table[fd];
 }
@@ -1079,6 +1082,10 @@ int fd_dup2(struct process* proc, int oldfd, int newfd) {
 }
 
 // Pipe operations
+static int pipe_read(struct device* dev, void* buffer, size_t size) __attribute__((unused));
+static int pipe_write(struct device* dev, const void* buffer, size_t size) __attribute__((unused));
+static int pipe_ioctl(struct device* dev, int request, void* arg) __attribute__((unused));
+
 static int pipe_read(struct device* dev, void* buffer, size_t size) {
     if (!dev || dev->type != DEV_PIPE || !buffer) return -1;
     

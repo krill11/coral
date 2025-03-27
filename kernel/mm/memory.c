@@ -53,6 +53,7 @@ void* get_page(void) {
 
 // Free a page
 void free_page(void* page) {
+    (void)page;  // Suppress unused parameter warning
     // For now, we don't actually free pages
     // This will be implemented when we add page frame allocation
 }
@@ -63,7 +64,7 @@ void map_page(void* phys_addr, void* virt_addr, uint32_t flags) {
     uint32_t pt_index = (uint32_t)virt_addr >> 12 & 0x3FF;
     
     // Get or create page table
-    uint32_t table_entry = (uint32_t)current_directory[pd_index];
+    page_t table_entry = current_directory[pd_index];
     if (!(table_entry & PAGE_PRESENT)) {
         page_table_t table = (page_table_t)get_page();
         current_directory[pd_index] = (page_t)((uint32_t)table | PAGE_PRESENT | PAGE_RW | PAGE_USER);
