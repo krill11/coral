@@ -20,7 +20,10 @@ KERNEL_OBJS = $(KERNEL_DIR)/kernel.o \
               $(KERNEL_DIR)/fs/elf.o \
               $(KERNEL_DIR)/fs/dynamic.o \
               $(KERNEL_DIR)/proc/process.o \
-              $(KERNEL_DIR)/proc/signal.o
+              $(KERNEL_DIR)/proc/signal.o \
+              $(KERNEL_DIR)/drivers/terminal.o \
+              $(KERNEL_DIR)/drivers/line.o \
+              $(KERNEL_DIR)/drivers/keyboard.o
 
 # Targets
 all: kernel initrd
