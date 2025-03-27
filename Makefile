@@ -14,24 +14,13 @@ INITRD_DIR = initrd
 TOOLS_DIR = tools
 
 # Files
-KERNEL_OBJS = $(KERNEL_DIR)/boot.o \
-              $(KERNEL_DIR)/kernel.o \
-              $(KERNEL_DIR)/interrupt.o \
-              $(KERNEL_DIR)/gdt.o \
-              $(KERNEL_DIR)/idt.o \
-              $(KERNEL_DIR)/io.o \
-              $(KERNEL_DIR)/keyboard.o \
-              $(KERNEL_DIR)/terminal.o \
-              $(KERNEL_DIR)/line.o \
-              $(KERNEL_DIR)/memory.o \
-              $(KERNEL_DIR)/paging.o \
-              $(KERNEL_DIR)/kmalloc.o \
-              $(KERNEL_DIR)/process.o \
-              $(KERNEL_DIR)/scheduler.o \
-              $(KERNEL_DIR)/syscall.o \
-              $(KERNEL_DIR)/fs.o \
-              $(KERNEL_DIR)/elf.o \
-              $(KERNEL_DIR)/dynamic.o
+KERNEL_OBJS = $(KERNEL_DIR)/kernel.o \
+              $(KERNEL_DIR)/mm/memory.o \
+              $(KERNEL_DIR)/fs/fs.o \
+              $(KERNEL_DIR)/fs/elf.o \
+              $(KERNEL_DIR)/fs/dynamic.o \
+              $(KERNEL_DIR)/proc/process.o \
+              $(KERNEL_DIR)/proc/signal.o
 
 # Targets
 all: kernel initrd
