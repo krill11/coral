@@ -63,21 +63,22 @@ void map_page(void* phys_addr, void* virt_addr, uint32_t flags) {
     uint32_t pt_index = (uint32_t)virt_addr >> 12 & 0x3FF;
     
     // Get or create page table
-    page_table_t table = (page_table_t)current_directory[pd_index];
-    if (!(table & PAGE_PRESENT)) {
-        table = (page_table_t)get_page();
+    page_t table_entry = current_directory[pd_index];
+    if (!(table_entry & PAGE_PRESENT)) {
+        page_table_t table = (page_table_t)get_page();
         current_directory[pd_index] = (page_t)table | PAGE_PRESENT | PAGE_RW | PAGE_USER;
         
         // Clear the page table
         for (int i = 0; i < 1024; i++) {
             table[i] = 0;
         }
+        
+        // Map the page
+        table[pt_index] = (page_t)phys_addr | flags;
     } else {
-        table = (page_table_t)((uint32_t)table & PAGE_MASK);
+        page_table_t table = (page_table_t)(table_entry & PAGE_MASK);
+        table[pt_index] = (page_t)phys_addr | flags;
     }
-    
-    // Map the page
-    table[pt_index] = (page_t)phys_addr | flags;
 }
 
 // Unmap a page
@@ -85,14 +86,16 @@ void unmap_page(void* virt_addr) {
     uint32_t pd_index = (uint32_t)virt_addr >> 22;
     uint32_t pt_index = (uint32_t)virt_addr >> 12 & 0x3FF;
     
-    page_table_t table = (page_table_t)(current_directory[pd_index] & PAGE_MASK);
-    table[pt_index] = 0;
+    page_t table_entry = current_directory[pd_index];
+    if (table_entry & PAGE_PRESENT) {
+        page_table_t table = (page_table_t)(table_entry & PAGE_MASK);
+        table[pt_index] = 0;
+    }
 }
 
 // Kernel memory allocation
 void* kmalloc(size_t size) {
     struct memory_block* block = heap_start;
-    struct memory_block* prev = 0;
     
     // Align size to 4 bytes
     size = (size + 3) & ~3;
@@ -115,7 +118,6 @@ void* kmalloc(size_t size) {
             return (void*)((char*)block + sizeof(struct memory_block));
         }
         
-        prev = block;
         block = block->next;
     }
     
