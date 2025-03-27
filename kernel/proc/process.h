@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../mm/memory.h"
 #include "../fs/fs.h"
+#include "../types.h"
 #include "signal.h"
 
 // Process states

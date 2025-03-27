@@ -1,6 +1,7 @@
 #ifndef _SIGNAL_H
 #define _SIGNAL_H
 
+#include "../types.h"
 #include <stdint.h>
 
 // Signal numbers

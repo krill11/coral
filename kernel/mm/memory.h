@@ -1,6 +1,7 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
+#include "../types.h"
 #include <stdint.h>
 
 // Page size is 4KB
