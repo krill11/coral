@@ -42,6 +42,8 @@ jobs:
         cd ..
         cp -r initrd/* ../initrd/
         cd ..
+        # Fix permissions before cleanup
+        sudo chown -R $USER:$USER tmp
         rm -rf tmp
     
     - name: Build OS
