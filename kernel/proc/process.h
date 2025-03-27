@@ -58,14 +58,6 @@ struct process_group {
     struct terminal* terminal;
 };
 
-// Signal information
-struct signal_info {
-    struct sigaction actions[32];
-    sigset_t blocked;
-    sigset_t pending;
-    struct siginfo pending_info[32];
-};
-
 // Process management functions
 void proc_init(void);
 struct process* proc_create(const char* name);
