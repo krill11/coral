@@ -63,10 +63,10 @@ void map_page(void* phys_addr, void* virt_addr, uint32_t flags) {
     uint32_t pt_index = (uint32_t)virt_addr >> 12 & 0x3FF;
     
     // Get or create page table
-    page_t table_entry = current_directory[pd_index];
+    uint32_t table_entry = (uint32_t)current_directory[pd_index];
     if (!(table_entry & PAGE_PRESENT)) {
         page_table_t table = (page_table_t)get_page();
-        current_directory[pd_index] = (page_t)table | PAGE_PRESENT | PAGE_RW | PAGE_USER;
+        current_directory[pd_index] = (page_t)((uint32_t)table | PAGE_PRESENT | PAGE_RW | PAGE_USER);
         
         // Clear the page table
         for (int i = 0; i < 1024; i++) {
@@ -74,10 +74,10 @@ void map_page(void* phys_addr, void* virt_addr, uint32_t flags) {
         }
         
         // Map the page
-        table[pt_index] = (page_t)phys_addr | flags;
+        table[pt_index] = (page_t)((uint32_t)phys_addr | flags);
     } else {
         page_table_t table = (page_table_t)(table_entry & PAGE_MASK);
-        table[pt_index] = (page_t)phys_addr | flags;
+        table[pt_index] = (page_t)((uint32_t)phys_addr | flags);
     }
 }
 
@@ -86,7 +86,7 @@ void unmap_page(void* virt_addr) {
     uint32_t pd_index = (uint32_t)virt_addr >> 22;
     uint32_t pt_index = (uint32_t)virt_addr >> 12 & 0x3FF;
     
-    page_t table_entry = current_directory[pd_index];
+    uint32_t table_entry = (uint32_t)current_directory[pd_index];
     if (table_entry & PAGE_PRESENT) {
         page_table_t table = (page_table_t)(table_entry & PAGE_MASK);
         table[pt_index] = 0;

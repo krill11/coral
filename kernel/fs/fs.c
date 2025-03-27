@@ -1,7 +1,17 @@
 #include "fs.h"
-#include "../mm/memory.h"
+#include "elf.h"
+#include "dynamic.h"
+#include "../proc/process.h"
+#include "../drivers/terminal.h"
 #include <string.h>
 #include <stddef.h>
+
+// Forward declarations
+extern struct process* current_process;
+
+// IOCTL commands
+#define FIONREAD  0x541B  // Get number of bytes available to read
+#define FIONWRITE 0x541C  // Get number of bytes that can be written
 
 // Root directory inode
 #define ROOT_INODE 1

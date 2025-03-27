@@ -32,6 +32,13 @@
 #define TERM_TAB    0x09
 #define TERM_BEL    0x07
 
+// Keyboard event structure
+struct keyboard_event {
+    uint8_t scancode;
+    uint8_t keycode;
+    uint8_t flags;
+};
+
 // Terminal structure
 struct terminal {
     uint16_t* buffer;
@@ -46,6 +53,7 @@ struct terminal {
 // Function declarations
 int terminal_init(void);
 void terminal_putchar(char c);
+void putchar(char c);  // Global putchar function
 void terminal_write(const char* str);
 void terminal_clear(void);
 void terminal_set_cursor(uint16_t x, uint16_t y);
