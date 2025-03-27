@@ -2,6 +2,14 @@
 #include "fs.h"
 #include "../mm/memory.h"
 #include <string.h>
+#include <stddef.h>
+
+// Forward declarations
+static char* find_library(const char* name);
+static int handle_got_relocation(struct library* lib, struct elf32_rel* rel,
+                               struct elf32_symbol* sym, const char* sym_name);
+static int handle_plt_relocation(struct library* lib, struct elf32_rel* rel,
+                               struct elf32_symbol* sym, const char* sym_name);
 
 // Library search paths
 #define MAX_SEARCH_PATHS 16
@@ -34,16 +42,9 @@ struct plt_entry {
 
 // Initialize dynamic linking
 int dynamic_init(void) {
-    // Initialize linker structure
-    linker.libraries = 0;
-    linker.num_search_paths = 0;
+    memset(&linker, 0, sizeof(struct dynamic_linker));
     linker.malloc = kmalloc;
     linker.free = kfree;
-    
-    // Add default search paths
-    dynamic_add_search_path("/lib");
-    dynamic_add_search_path("/usr/lib");
-    
     return 0;
 }
 
@@ -167,87 +168,65 @@ int dynamic_load_library(const char* name, struct library** lib) {
     const char* path = dynamic_find_library(name);
     if (!path) return -1;
     
-    // Open library file
+    // Load library file
     struct file* file = fs_open(path, FF_OPEN);
-    if (!file) {
-        linker.free((void*)path);
-        return -1;
-    }
-    
-    // Read library data
-    void* data = linker.malloc(file->size);
-    if (!data) {
-        fs_close(file);
-        linker.free((void*)path);
-        return -1;
-    }
-    
-    if (fs_read(file, data, file->size) != file->size) {
-        linker.free(data);
-        fs_close(file);
-        linker.free((void*)path);
-        return -1;
-    }
-    
-    // Parse ELF header
-    struct elf32_header* header = (struct elf32_header*)data;
-    if (!elf_validate_header(header)) {
-        linker.free(data);
-        fs_close(file);
-        linker.free((void*)path);
-        return -1;
-    }
+    if (!file) return -1;
     
     // Allocate library structure
     struct library* new_lib = linker.malloc(sizeof(struct library));
     if (!new_lib) {
-        linker.free(data);
         fs_close(file);
-        linker.free((void*)path);
         return -1;
     }
     
-    // Initialize library structure
-    strncpy(new_lib->name, name, sizeof(new_lib->name) - 1);
-    new_lib->name[sizeof(new_lib->name) - 1] = '\0';
-    new_lib->base = data;
-    new_lib->header = header;
-    new_lib->dynamic = 0;
-    new_lib->next = linker.libraries;
+    memset(new_lib, 0, sizeof(struct library));
+    strncpy(new_lib->name, name, MAX_LIBRARY_NAME - 1);
     new_lib->refcount = 1;
-    new_lib->got = 0;
-    new_lib->plt = 0;
     
-    // Find dynamic section
-    for (int i = 0; i < header->e_shnum; i++) {
-        struct elf32_section_header* sh = (struct elf32_section_header*)
-            ((char*)data + header->e_shoff + i * header->e_shentsize);
-        if (sh->sh_type == SHT_DYNAMIC) {
-            new_lib->dynamic = (struct elf32_dynamic*)((char*)data + sh->sh_offset);
-            break;
-        }
+    // Read file into memory
+    new_lib->base = linker.malloc(file->size);
+    if (!new_lib->base) {
+        linker.free(new_lib);
+        fs_close(file);
+        return -1;
     }
     
-    // Initialize GOT and PLT
-    if (init_got(new_lib) < 0 || init_plt(new_lib) < 0) {
-        dynamic_unload_library(new_lib);
+    if (fs_read(file, new_lib->base, file->size, 0) < 0) {
+        linker.free(new_lib->base);
+        linker.free(new_lib);
+        fs_close(file);
+        return -1;
+    }
+    
+    // Parse ELF header
+    new_lib->header = (struct elf32_header*)new_lib->base;
+    if (elf_validate_header(new_lib->header) < 0) {
+        linker.free(new_lib->base);
+        linker.free(new_lib);
+        fs_close(file);
         return -1;
     }
     
     // Add to library list
+    new_lib->next = linker.libraries;
     linker.libraries = new_lib;
     
-    // Close file and free path
-    fs_close(file);
-    linker.free((void*)path);
+    // Load required libraries
+    if (dynamic_load_required_libs(new_lib->header) < 0) {
+        dynamic_unload_library(new_lib);
+        fs_close(file);
+        return -1;
+    }
     
-    // Relocate library
+    // Perform relocations
     if (dynamic_relocate(new_lib) < 0) {
         dynamic_unload_library(new_lib);
+        fs_close(file);
         return -1;
     }
     
     *lib = new_lib;
+    fs_close(file);
     return 0;
 }
 

@@ -423,104 +423,31 @@ int fs_readdir(struct file* dir, struct dir_entry* entry) {
     return 0;
 }
 
-// Load an executable file
-int fs_executable_load(const char* path, void** entry_point, void** stack_top) {
-    if (!path || !entry_point || !stack_top) return -1;
+// Load executable
+int fs_executable_load(struct file* file, void** entry_point) {
+    if (!file || !entry_point) return -1;
     
-    struct file* file = fs_open(path, FF_OPEN);
-    if (!file) return -1;
+    // Read ELF header
+    struct elf32_header header;
+    if (fs_read(file, &header, sizeof(header), 0) < 0) return -1;
     
-    struct inode* inode = fs_get_inode(file->inode);
-    if (!inode) {
-        fs_close(file);
-        return -1;
-    }
-    
-    // Check if file is executable
-    if (inode->type != FT_FILE || !(inode->permissions & FP_EXEC)) {
-        fs_close(file);
-        return -1;
-    }
-    
-    // Allocate memory for the file
-    void* file_data = kmalloc(inode->size);
-    if (!file_data) {
-        fs_close(file);
-        return -1;
-    }
-    
-    // Read file into memory
-    if (fs_read(file, file_data, inode->size, 0) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
-    
-    // Parse ELF header
-    struct elf32_header* header = (struct elf32_header*)file_data;
-    
-    // Validate ELF header
-    if (elf_validate_header(header) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
-    
-    // Load required libraries
-    if (dynamic_load_required_libs(header) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
-    
-    // Load program headers
-    if (elf_load_program_headers(header, file_data) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
+    // Validate header
+    if (elf_validate_header(&header) < 0) return -1;
     
     // Load sections
-    if (elf_load_sections(header, file_data) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
+    if (elf_load_sections(&header, file->data) < 0) return -1;
+    
+    // Load program headers
+    if (elf_load_program_headers(&header, file->data) < 0) return -1;
     
     // Set up memory protection
-    if (elf_setup_memory_protection(header) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
+    if (elf_setup_memory_protection(&header) < 0) return -1;
     
-    // Perform dynamic relocations
-    if (dynamic_relocate(header) < 0) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
+    // Load required libraries
+    if (dynamic_load_required_libs(&header) < 0) return -1;
     
     // Get entry point
-    *entry_point = elf_get_entry_point(header);
-    
-    // Set up stack
-    void* stack = get_page();
-    if (!stack) {
-        kfree(file_data);
-        fs_close(file);
-        return -1;
-    }
-    
-    // Map stack with read/write permissions
-    map_page(stack, (void*)(0x8000000 - PAGE_SIZE), 
-             PAGE_PRESENT | PAGE_RW | PAGE_USER);
-    
-    *stack_top = (void*)(0x8000000 - 16);
-    
-    // Free file data
-    kfree(file_data);
-    fs_close(file);
+    *entry_point = elf_get_entry_point(&header);
     
     return 0;
 }
