@@ -36,8 +36,14 @@ KERNEL_OBJS = $(KERNEL_DIR)/boot.o \
 # Targets
 all: kernel initrd
 
+# Build rules for object files
+$(KERNEL_DIR)/%.o: $(KERNEL_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(KERNEL_DIR)/%.o: $(KERNEL_DIR)/%.asm
+	$(AS) $(ASFLAGS) -o $@ $<
+
 kernel: $(KERNEL_OBJS)
-	$(CC) $(CFLAGS) -c $(KERNEL_DIR)/kernel.c -o $(KERNEL_DIR)/kernel.o
 	$(LD) $(LDFLAGS) -o kernel.bin $(KERNEL_OBJS)
 	cat $(BOOT_DIR)/boot.bin kernel.bin > os.img
 	rm kernel.bin
