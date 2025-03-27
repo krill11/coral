@@ -51,6 +51,17 @@
 #define MAX_LIBRARY_PATHS 16
 #define MAX_LIBRARY_NAME  256
 
+// GOT entry types
+#define GOT_ENTRY_SIZE 4
+#define GOT_ENTRY_COUNT 1024
+
+// PLT entry structure
+struct plt_entry {
+    uint8_t push;    // pushl $offset
+    uint8_t jmp;     // jmp *offset
+    uint32_t offset; // offset into GOT
+};
+
 // Library structure
 struct library {
     char name[MAX_LIBRARY_NAME];

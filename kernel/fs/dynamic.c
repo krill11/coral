@@ -3,13 +3,16 @@
 #include "../mm/memory.h"
 #include <string.h>
 #include <stddef.h>
+#include <stdio.h>
 
 // Forward declarations
 static char* find_library(const char* name);
 static int handle_got_relocation(struct library* lib, struct elf32_rel* rel,
-                               struct elf32_symbol* sym, const char* sym_name);
+                               struct elf32_symbol* sym, const char* sym_name) __attribute__((unused));
 static int handle_plt_relocation(struct library* lib, struct elf32_rel* rel,
-                               struct elf32_symbol* sym, const char* sym_name);
+                               struct elf32_symbol* sym, const char* sym_name) __attribute__((unused));
+static int init_got(struct library* lib) __attribute__((unused));
+static int init_plt(struct library* lib) __attribute__((unused));
 
 // Library search paths
 #define MAX_SEARCH_PATHS 16

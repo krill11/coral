@@ -46,43 +46,40 @@ int elf_validate_header(const struct elf32_header* header) {
 int elf_load_sections(const struct elf32_header* header, void* file_data) {
     if (!header || !file_data) return -1;
     
-    // Get section headers
-    struct elf32_section_header* section_headers = 
-        (struct elf32_section_header*)((char*)file_data + header->e_shoff);
-    
-    // Get section name string table
-    struct elf32_section_header* strtab_header = 
-        &section_headers[header->e_shstrndx];
-    const char* strtab = (const char*)file_data + strtab_header->sh_offset;
-    
-    // Load each section
-    for (uint16_t i = 0; i < header->e_shnum; i++) {
-        struct elf32_section_header* section = &section_headers[i];
-        
-        // Skip sections that don't need to be loaded
-        if (section->sh_type == SHT_NULL || 
-            section->sh_type == SHT_NOBITS ||
-            !(section->sh_flags & SHF_ALLOC)) {
-            continue;
+    // Find string table section
+    struct elf32_section_header* strtab_header = 0;
+    for (int i = 0; i < header->e_shnum; i++) {
+        struct elf32_section_header* sh = (struct elf32_section_header*)
+            ((char*)file_data + header->e_shoff + i * header->e_shentsize);
+        if (sh->sh_type == SHT_STRTAB) {
+            strtab_header = sh;
+            break;
         }
+    }
+    
+    if (!strtab_header) return -1;
+    
+    // Load sections
+    for (int i = 0; i < header->e_shnum; i++) {
+        struct elf32_section_header* sh = (struct elf32_section_header*)
+            ((char*)file_data + header->e_shoff + i * header->e_shentsize);
+            
+        // Skip empty sections
+        if (sh->sh_size == 0) continue;
+        
+        // Get section name
+        const char* name = (const char*)file_data + strtab_header->sh_offset + sh->sh_name;
         
         // Allocate memory for section
-        void* section_addr = get_page();
+        void* section_addr = kmalloc(sh->sh_size);
         if (!section_addr) return -1;
         
-        // Map section into memory
-        uint32_t flags = PAGE_PRESENT | PAGE_USER;
-        if (section->sh_flags & SHF_WRITE) flags |= PAGE_RW;
-        if (section->sh_flags & SHF_EXECINSTR) flags |= PAGE_RW;
-        
-        map_page(section_addr, (void*)section->sh_addr, flags);
-        
         // Copy section data
-        if (section->sh_type != SHT_NOBITS) {
-            memcpy((void*)section->sh_addr,
-                   (char*)file_data + section->sh_offset,
-                   section->sh_size);
-        }
+        memcpy(section_addr, (char*)file_data + sh->sh_offset, sh->sh_size);
+        
+        // Map section into memory
+        map_page(section_addr, (void*)sh->sh_addr, 
+                PAGE_PRESENT | PAGE_RW | PAGE_USER);
     }
     
     return 0;
