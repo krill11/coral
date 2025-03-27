@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "Available commands:"
+echo "  ls          - List directory contents"
+echo "  cd          - Change directory"
+echo "  pwd         - Print working directory"
+echo "  cat         - Concatenate and display file contents"
+echo "  echo        - Display a line of text"
+echo "  help        - Show this help message"
+echo "  exit        - Exit the shell"
+echo "  clear       - Clear the terminal screen"
+echo "  history     - Show command history"
+echo "  ps          - Display process status"
+echo "  kill        - Send a signal to a process" 

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Basic init script for CoralOS
+
+# Mount necessary filesystems
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+
+# Set up environment
+export PATH=/bin:/usr/bin
+export HOME=/root
+export TERM=linux
+
+# Start bash
+exec /bin/bash 

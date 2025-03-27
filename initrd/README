@@ -1,0 +1,22 @@
+CoralOS Initial Ramdisk
+
+This is the initial ramdisk for CoralOS, containing the basic system files and configuration needed to boot the system.
+
+Directory structure:
+/bin      - System binaries
+/lib      - Shared libraries
+/etc      - System configuration files
+
+Files:
+/bin/init  - System initialization script
+/bin/help  - Help command
+/etc/passwd - User account information
+/etc/group  - Group information
+/etc/fstab  - Filesystem mount information
+/etc/hosts  - Hostname resolution
+/etc/resolv.conf - DNS configuration
+/etc/profile - Shell profile
+/etc/inputrc - Readline configuration
+/etc/bash.bashrc - Bash configuration
+/etc/issue - Login prompt
+/etc/motd - Message of the day 

@@ -1,0 +1,78 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm gcc-multilib qemu-system-x86
+    
+    - name: Download and install bash
+      run: |
+        mkdir -p tmp
+        cd tmp
+        wget https://ftp.gnu.org/gnu/bash/bash-5.2.15.tar.gz
+        tar xf bash-5.2.15.tar.gz
+        cd bash-5.2.15
+        ./configure --prefix=/ --host=i386-pc-linux-gnu
+        make
+        sudo make DESTDIR=../initrd install
+        
+        # Download readline
+        cd ..
+        wget https://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz
+        tar xf readline-8.2.tar.gz
+        cd readline-8.2
+        ./configure --prefix=/ --host=i386-pc-linux-gnu
+        make
+        sudo make DESTDIR=../initrd install
+        
+        # Copy initrd files
+        cd ..
+        cp -r initrd/* ../initrd/
+        cd ..
+        rm -rf tmp
+    
+    - name: Build OS
+      run: |
+        make clean
+        make
+    
+    - name: Create ISO
+      run: |
+        # Create bootable ISO
+        dd if=/dev/zero of=coralos.iso bs=512 count=2880
+        dd if=boot/boot.bin of=coralos.iso conv=notrunc
+        dd if=os.img of=coralos.iso seek=1 conv=notrunc
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./coralos.iso
+        asset_name: coralos.iso
+        asset_content_type: application/x-iso9660-image 
