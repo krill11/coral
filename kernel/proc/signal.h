@@ -46,45 +46,6 @@
 #define SA_NODEFER    0x40000000  // Don't automatically block the signal when its handler is being executed
 #define SA_RESETHAND  0x80000000  // Reset to SIG_DFL on entry to handler
 
-// Signal handler types
-typedef void (*sighandler_t)(int);
-typedef void (*sigaction_t)(int, void*, void*);
-
-// Signal action structure
-struct sigaction {
-    union {
-        sighandler_t sa_handler;
-        sigaction_t sa_sigaction;
-    };
-    uint32_t sa_flags;
-    void (*sa_restorer)(void);
-    sigset_t sa_mask;
-};
-
-// Signal set structure
-typedef struct {
-    uint32_t sig[2];  // 64 signals
-} sigset_t;
-
-// Signal information structure
-struct siginfo {
-    int si_signo;     // Signal number
-    int si_errno;     // Error number
-    int si_code;      // Signal code
-    pid_t si_pid;     // Sending process ID
-    uid_t si_uid;     // Real user ID of sending process
-    void* si_addr;    // Memory location which caused fault
-    int si_status;    // Exit value or signal
-    int si_band;      // Band event for SIGPOLL
-    union sigval si_value;  // Signal value
-};
-
-// Signal value union
-union sigval {
-    int sival_int;
-    void* sival_ptr;
-};
-
 // Function declarations
 int signal_init(void);
 int signal_register(int signum, const struct sigaction* act, struct sigaction* oldact);

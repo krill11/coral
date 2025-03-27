@@ -8,13 +8,49 @@
 typedef int32_t pid_t;
 typedef uint32_t uid_t;
 typedef uint32_t gid_t;
-typedef uint32_t sigset_t;
+
+// Signal types
+typedef struct {
+    uint32_t sig[2];  // 64 signals
+} sigset_t;
 
 // Signal value union
 typedef union sigval {
     int sival_int;
     void* sival_ptr;
 } sigval_t;
+
+// Signal information structure
+struct siginfo {
+    int si_signo;     // Signal number
+    int si_errno;     // Error number
+    int si_code;      // Signal code
+    pid_t si_pid;     // Sending process ID
+    uid_t si_uid;     // Real user ID of sending process
+    void* si_addr;    // Memory location which caused fault
+    int si_status;    // Exit value or signal
+    int si_band;      // Band event for SIGPOLL
+    sigval_t si_value;  // Signal value
+};
+
+// Signal action structure
+struct sigaction {
+    union {
+        void (*sa_handler)(int);
+        void (*sa_sigaction)(int, struct siginfo*, void*);
+    };
+    uint32_t sa_flags;
+    void (*sa_restorer)(void);
+    sigset_t sa_mask;
+};
+
+// Signal information structure for process
+struct signal_info {
+    struct sigaction actions[32];
+    sigset_t blocked;
+    sigset_t pending;
+    struct siginfo pending_info[32];
+};
 
 // Maximum number of open files per process
 #define MAX_FILES 1024

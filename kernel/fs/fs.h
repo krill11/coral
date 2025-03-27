@@ -4,6 +4,10 @@
 #include "../types.h"
 #include <stdint.h>
 
+// Forward declarations
+struct process;
+struct terminal;
+
 // File types
 #define FT_FILE     0
 #define FT_DIR      1
